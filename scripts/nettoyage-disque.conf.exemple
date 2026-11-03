@@ -1,0 +1,66 @@
+# Reglages de nettoyage-disque.sh, lus par "source". Ne mettre que ce qui differe des defauts.
+# Les chemins de donnees (base, envois des utilisateurs, sauvegardes) ne vont JAMAIS ici.
+# Les valeurs ci-dessous sont des exemples a adapter apres inventaire du serveur.
+
+SEUIL_URGENCE=88
+SEUIL_ALERTE=90
+JOURNAL=/var/log/nettoyage-disque.log
+
+# Comptes dont on vide les caches (CACHES_UTILISATEUR) et purge les journaux
+# d'outils (JOURNAUX_UTILISATEUR). Voir les defauts en haut du script, et
+# surtout la liste des FAUX caches a ne jamais y ajouter. Une entree dont un
+# processus vivant se sert est epargnee d'office (serveurs MCP lances par npx
+# ou uvx) : rien a regler pour cela.
+UTILISATEURS_CACHES="root dev"
+
+# Bases de test jetables (laisser vide si aucune). Le suffixe numerique doit etre le pid du lanceur.
+BASES_TEST_CONTENEUR=""
+BASES_TEST_MOTIF='^test_.*_[0-9]+$'
+
+# Purges propres au serveur, une par ligne. Fichiers seulement.
+#   "motif|jours"        tous les fichiers plus vieux que N jours
+#   "motif|jours|nom"    seulement ceux dont le nom correspond (ex. *.html)
+# Le chemin donne peut etre un lien symbolique ; un lien rencontre a
+# l'interieur n'est jamais suivi.
+PURGES_SUPPLEMENTAIRES="
+/opt/app/tmp/*|3
+/opt/app/front/.next.previous/server/app|1|*.html
+"
+
+# Journaux ecrits en continu (>>) qu'aucune rotation ne couvre, "motif|Mo" :
+# au-dela du plafond, ramenes a leurs 512 derniers Ko, sans changer d'inode.
+JOURNAUX_A_PLAFONNER="
+/home/dev/*.log|5
+/var/log/nettoyage-disque.log|5
+"
+
+# Niveau hebdomadaire, "dossier|jours" : ce qui demande du jugement et ne doit
+# pas tourner chaque nuit (artefacts de session des agents, enregistrements,
+# vieilles versions de serveurs d'IDE). Demande sa propre minuterie :
+# celle que l'installeur pose par defaut le dimanche (sauf --sans-hebdo).
+# NE PAS y mettre ~/.claude/projects : ce sont les transcripts qui permettent de
+# reprendre une session interrompue.
+DOSSIERS_HEBDO="
+/opt/app/.gemini/antigravity/browser_recordings|14
+"
+
+# Alerte : commande qui recoit le message (ex. un script qui envoie un courriel).
+# La laisser vide si un controleur alerte deja : deux alertes pour un fait, c'est du bruit.
+ALERTE_CMD=""
+
+# Images Docker : 0 = orphelines seulement. Mettre 0 si une image etiquetee sans
+# conteneur sert a un retour arriere ou a un service arrete du compose.
+DOCKER_IMAGES_TOUTES=1
+
+# Supabase auto-heberge : journaux Logflare (aucune retention native).
+# LOGFLARE_CONTENEUR=supabase-db
+# LOGFLARE_JOURS=7
+# Plafond du WAL retenu par le creneau de Logflare (4GB par defaut dans l'image).
+# WAL_SLOT_PLAFOND=1GB
+
+# Applications Next.js : cache d'images purge, cache webpack vide en hebdomadaire.
+# NEXT_DOSSIERS="/opt/app"
+# NEXT_IMAGES_JOURS=14
+
+# Mode hebdomadaire : vieilles versions de serveurs d'IDE et de Claude Code.
+# VIEILLES_VERSIONS=1
